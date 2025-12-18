@@ -125,21 +125,9 @@ class VendorController extends Controller
         ]);
     }
 
-    
     /**
-    * GET /vendor/products
-    * Logged-in vendor products (paginated)
-    */
-    public function products(Request $request)
-    {
-        $this->ensureVendor();
-    
-        return response()->json(
-            Product::where('vendor_id', auth()->user()->vendor->id)
-                ->orderBy('created_at', 'desc')
-                ->paginate($request->limit ?? 10)
-        );
-    }
+     * GET /vendors/nearby
+     */
 
     public function nearby(Request $request){
         $request->validate([

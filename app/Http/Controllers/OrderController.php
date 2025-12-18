@@ -13,67 +13,8 @@ use Illuminate\Support\Str;
 class OrderController extends Controller
 {
     /**
-     * Create order (customer)
+     * Place a new order
      */
-    // public function store(OrderRequest $request)
-    // {
-    //     $user = auth()->user();
-
-    //     $cart = Cart::with('items.product')
-    //         ->where('user_id', $user->id)
-    //         ->first();
-
-    //     if (!$cart || $cart->items->isEmpty()) {
-    //         return response()->json(['message' => 'Your cart is empty'], 400);
-    //     }
-
-    //     // Single-vendor checkout
-    //     $vendorId = $cart->items->first()->product->vendor_id;
-
-    //     $subtotal = $cart->items->sum(fn ($i) => $i->price * $i->quantity);
-    //     $tax = $subtotal * 0.10;
-    //     $total = $subtotal + $tax;
-
-    //     $order = Order::create([
-    //         'user_id' => $user->id,
-    //         'vendor_id' => $vendorId,
-    //         'order_number' => 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
-    //         'total' => $total,
-    //         'status' => 'pending',
-    //         'delivery_address' => $request->delivery_address,
-    //         'phone_number' => $request->phone_number,
-    //         'delivery_date' => $request->delivery_date,
-    //         'special_instructions' => $request->special_instructions,
-    //         'payment_method' => $request->payment_method,
-    //         'payment_status' => 'pending'
-    //     ]);
-
-    //     foreach ($cart->items as $item) {
-    //         if ($item->product->stock < $item->quantity) {
-    //             return response()->json([
-    //                 'message' => "Not enough stock for {$item->product->name}"
-    //             ], 400);
-    //         }
-
-    //         OrderItem::create([
-    //             'order_id' => $order->id,
-    //             'product_id' => $item->product_id,
-    //             'quantity' => $item->quantity,
-    //             'price' => $item->price,
-    //             'subtotal' => $item->quantity * $item->price
-    //         ]);
-
-    //         $item->product->decrement('stock', $item->quantity);
-    //     }
-
-    //     $cart->items()->delete();
-
-    //     return response()->json([
-    //         'message' => 'Order placed successfully',
-    //         'order' => $order->load('items.product')
-    //     ], 201);
-    // }
-
     public function store(OrderRequest $request)
     {
         return DB::transaction(function () use ($request) {
@@ -204,7 +145,7 @@ class OrderController extends Controller
 
         return response()->json(
             Order::where('vendor_id', auth()->user()->vendor->id)
-                ->with(['user','items'])
+                ->with('items.product', 'user')
                 ->when($request->status, fn ($q) => $q->where('status', $request->status))
                 ->orderByDesc('created_at')
                 ->paginate($request->limit ?? 10)
@@ -221,7 +162,7 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'status' => 'required|in:processing,ready for pickup,in_transit,delivered'
+            'status' => 'required|in:pending,confirmed,processing,ready for pickup,in_transit,delivered,cancelled'
         ]);
 
         $order = Order::where('vendor_id', auth()->user()->vendor->id)

@@ -102,7 +102,7 @@ class PaymentController extends Controller
      */
     public function verify($transactionId)
     {
-        $payment = Payment::where('transaction_id', $transactionId)->first();
+        $payment = Payment::where('transaction_id', $transactionId)->firstOrFail();
 
         if (!$payment) {
             return response()->json(['message' => 'Payment not found'], 404);
